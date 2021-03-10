@@ -35,7 +35,7 @@ export default [
       commonjs(),
       babel({
         babelHelpers: 'runtime',
-        exclude: 'node_modules/**',
+        exclude: [/\/node_modules\//],
         extensions,
       }),
 
@@ -71,8 +71,8 @@ export default [
       filesize(),
     ],
     external: (id) => {
-      console.log('id: ', id)
-      return /core-js|@babel\/runtime/.test(id)
+      // console.log('id: ', id)
+      return /core-js|@babel\/runtime|@hook\/callback/.test(id)
     },
   },
 ]
