@@ -24,9 +24,10 @@ export default class HookEvent {
     getCallbackInstance(event: string): HookCallback;
     on(identity: identity, method: method, ctx?: any): this;
     listen(identity: identity, method: method, ctx?: any): this;
-    private _bind;
     off(identity: identity): this;
     emit(identity: identity, ...params: any): Promise<emitResult>;
+    private _hasCallbackInstance;
+    private _bind;
     private _execCallbacks;
     private _execCallback;
     private _parseIdentity;

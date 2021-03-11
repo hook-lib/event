@@ -68,7 +68,7 @@ var HookEvent = /*#__PURE__*/function () {
   }, {
     key: "getCallbackInstance",
     value: function getCallbackInstance(event) {
-      if (!this.hookCallbacks[event]) {
+      if (!this._hasCallbackInstance(event)) {
         this.hookCallbacks[event] = new HookCallback__default['default']({
           defaultGroup: this.defaultGroup,
           defaultOrder: this.defaultOrder,
@@ -91,30 +91,15 @@ var HookEvent = /*#__PURE__*/function () {
       return this._bind('unshift', identity, method, ctx);
     }
   }, {
-    key: "_bind",
-    value: function _bind(type, identity, method) {
-      var ctx = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : this;
-
-      var _this$_parseIdentity = this._parseIdentity(identity),
-          event = _this$_parseIdentity.event,
-          group = _this$_parseIdentity.group,
-          times = _this$_parseIdentity.times;
-
-      var cb = this.getCallbackInstance(event);
-      cb[type]({
-        method: method,
-        group: group,
-        times: times,
-        ctx: ctx
-      });
-      return this;
-    }
-  }, {
     key: "off",
     value: function off(identity) {
-      var _this$_parseIdentity2 = this._parseIdentity(identity),
-          event = _this$_parseIdentity2.event,
-          group = _this$_parseIdentity2.group;
+      var _this$_parseIdentity = this._parseIdentity(identity),
+          event = _this$_parseIdentity.event,
+          group = _this$_parseIdentity.group;
+
+      if (!this._hasCallbackInstance(event)) {
+        return this;
+      }
 
       var cb = this.getCallbackInstance(event);
 
@@ -134,32 +119,69 @@ var HookEvent = /*#__PURE__*/function () {
       }
 
       return __awaiter(this, void 0, void 0, /*#__PURE__*/_regeneratorRuntime__default['default'].mark(function _callee() {
-        var _this$_parseIdentity3, event, group, cb, items, result;
+        var _this$_parseIdentity2, event, group, cb, items, result;
 
         return _regeneratorRuntime__default['default'].wrap(function _callee$(_context) {
           while (1) {
             switch (_context.prev = _context.next) {
               case 0:
-                _this$_parseIdentity3 = this._parseIdentity(identity), event = _this$_parseIdentity3.event, group = _this$_parseIdentity3.group;
+                _this$_parseIdentity2 = this._parseIdentity(identity), event = _this$_parseIdentity2.event, group = _this$_parseIdentity2.group;
+
+                if (this._hasCallbackInstance(event)) {
+                  _context.next = 3;
+                  break;
+                }
+
+                return _context.abrupt("return", {
+                  total: 0,
+                  status: true,
+                  errors: []
+                });
+
+              case 3:
                 cb = this.getCallbackInstance(event);
                 items = typeof group === 'undefined' ? cb.getAll() : cb.getByGroup(group);
-                _context.next = 5;
+                _context.next = 7;
                 return this._execCallbacks.apply(this, [items].concat(params));
 
-              case 5:
+              case 7:
                 result = _context.sent;
                 cb.removeItems(function (item) {
                   return item.times && item.executed === item.times;
                 });
                 return _context.abrupt("return", result);
 
-              case 8:
+              case 10:
               case "end":
                 return _context.stop();
             }
           }
         }, _callee, this);
       }));
+    }
+  }, {
+    key: "_hasCallbackInstance",
+    value: function _hasCallbackInstance(event) {
+      return !!this.hookCallbacks[event];
+    }
+  }, {
+    key: "_bind",
+    value: function _bind(type, identity, method) {
+      var ctx = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : this;
+
+      var _this$_parseIdentity3 = this._parseIdentity(identity),
+          event = _this$_parseIdentity3.event,
+          group = _this$_parseIdentity3.group,
+          times = _this$_parseIdentity3.times;
+
+      var cb = this.getCallbackInstance(event);
+      cb[type]({
+        method: method,
+        group: group,
+        times: times,
+        ctx: ctx
+      });
+      return this;
     }
   }, {
     key: "_execCallbacks",

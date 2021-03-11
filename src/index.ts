@@ -49,7 +49,7 @@ export default class HookEvent {
   }
 
   getCallbackInstance(event: string): HookCallback {
-    if (!this.hookCallbacks[event]) {
+    if (!this._hasCallbackInstance(event)) {
       this.hookCallbacks[event] = new HookCallback({
         defaultGroup: this.defaultGroup,
         defaultOrder: this.defaultOrder,
@@ -67,22 +67,12 @@ export default class HookEvent {
     return this._bind('unshift', identity, method, ctx)
   }
 
-  private _bind(
-    type: 'push' | 'unshift',
-    identity: identity,
-    method: method,
-    ctx: any = this
-  ): this {
-    const { event, group, times } = this._parseIdentity(identity)
-
-    const cb = this.getCallbackInstance(event)
-    cb[type]({ method, group, times, ctx })
-    return this
-  }
-
   off(identity: identity): this {
     const { event, group } = this._parseIdentity(identity)
 
+    if (!this._hasCallbackInstance(event)) {
+      return this
+    }
     const cb = this.getCallbackInstance(event)
     if (typeof group === 'undefined') {
       cb.removeAll()
@@ -94,6 +84,9 @@ export default class HookEvent {
 
   async emit(identity: identity, ...params: any): Promise<emitResult> {
     const { event, group } = this._parseIdentity(identity)
+    if (!this._hasCallbackInstance(event)) {
+      return { total: 0, status: true, errors: [] }
+    }
     const cb = this.getCallbackInstance(event)
     const items =
       typeof group === 'undefined' ? cb.getAll() : cb.getByGroup(group)
@@ -103,6 +96,23 @@ export default class HookEvent {
     cb.removeItems(item => item.times && (item.executed === item.times))
 
     return result
+  }
+
+  private _hasCallbackInstance(event: string): boolean {
+    return !!this.hookCallbacks[event]
+  }
+
+  private _bind(
+    type: 'push' | 'unshift',
+    identity: identity,
+    method: method,
+    ctx: any = this
+  ): this {
+    const { event, group, times } = this._parseIdentity(identity)
+
+    const cb = this.getCallbackInstance(event)
+    cb[type]({ method, group, times, ctx })
+    return this
   }
 
   private async _execCallbacks(
