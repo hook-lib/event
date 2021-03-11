@@ -198,14 +198,15 @@ export default class HookEvent {
         if (executed) {
           result.total += 1
         }
-      } catch (err) {
+      } catch (error) {
         result.status = false
-        result.errors.push(err)
+        result.errors.push(error)
         this.exception('ERROR', {
           code: 300001,
           message: 'run callback error',
           detail: {
-            ...item
+            ...item,
+            error
           }
         })
       }

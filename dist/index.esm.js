@@ -327,7 +327,9 @@ var HookEvent = /*#__PURE__*/function () {
                 this.exception('ERROR', {
                   code: 300001,
                   message: 'run callback error',
-                  detail: Object.assign({}, item)
+                  detail: Object.assign(Object.assign({}, item), {
+                    err: _context3.t0
+                  })
                 });
 
               case 17:
