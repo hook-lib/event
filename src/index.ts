@@ -7,13 +7,30 @@ export interface identityObject {
   times?: number
 }
 
-export interface options extends callbackOptions{}
+export type exceptionLevel = 'LOG' | 'WARN' | 'ERROR'
+
+export interface exceptionInfo {
+  code: number,
+  message: string,
+  detail: {
+    [key: string] : any
+  }
+}
+
+export type debugMode = false | {
+  LOG: boolean,
+  WARN: boolean,
+  ERROR: boolean,
+}
+export interface options extends callbackOptions{
+  debugMode?: debugMode
+}
 
 export type identity = identityObject | string
 
 type hookCallbacks = {
   [key: string]: HookCallback
-}
+};
 
 type method = (...args: any) => any
 
@@ -34,18 +51,56 @@ export default class HookEvent {
         defaultGroup: 'default',
         defaultOrder: 1000,
         initDefaultGroup: true,
+        debugMode: false
       },
       options
     )
     this.defaultGroup = config.defaultGroup
     this.defaultOrder = config.defaultOrder
     this.initDefaultGroup = config.initDefaultGroup
+
+    if (config.debugMode) {
+      if (config.debugMode.LOG) {
+        this.traceLog()
+      }
+      if (config.debugMode.WARN) {
+        this.traceWarn()
+      }
+      if (config.debugMode.ERROR) {
+        this.traceError()
+      }
+    }
+  }
+
+  traceLog() {
+    this.off('HOOK_LOG').on('HOOK_LOG', (info) => {
+      console.error(info)
+    })
+  }
+
+  traceWarn() {
+    this.off('HOOK_WARN').on('HOOK_WARN', (info) => {
+      console.error(info)
+    })
+  }
+
+  traceError() {
+    this.off('HOOK_ERROR').on('HOOK_ERROR', (info) => {
+      console.error(info)
+    })
+  }
+
+  async exception(level: exceptionLevel, info: exceptionInfo): Promise<emitResult> {
+    info.message = `HOOK_${level}: ${info.message}`
+    return await this.emit(`HOOK_${level}`, info)
   }
 
   setEventGroups(event: string, groups: groups): this {
-    const cb = this.getCallbackInstance(event)
-    cb.setGroups(groups)
-    return this
+    return this._setOrAddEventGroups(event, groups, 'set')
+  }
+
+  addEventGroups(event: string, groups: groups): this {
+    return this._setOrAddEventGroups(event, groups, 'add')
   }
 
   getCallbackInstance(event: string): HookCallback {
@@ -69,7 +124,6 @@ export default class HookEvent {
 
   off(identity: identity): this {
     const { event, group } = this._parseIdentity(identity)
-
     if (!this._hasCallbackInstance(event)) {
       return this
     }
@@ -90,12 +144,29 @@ export default class HookEvent {
     const cb = this.getCallbackInstance(event)
     const items =
       typeof group === 'undefined' ? cb.getAll() : cb.getByGroup(group)
-
     const result = await this._execCallbacks(items, ...params)
-
     cb.removeItems(item => item.times && (item.executed === item.times))
-
     return result
+  }
+
+  private _setOrAddEventGroups(event: string, groups: groups, type: 'set' | 'add'): this {
+    const cb = this.getCallbackInstance(event)
+    Object.keys(groups).forEach((group) => {
+      const has = cb.hasGroup(group)
+      if (type === 'set' || !has) {
+        const order = groups[group]
+        cb.setGroup(group, order)
+      }
+      if (has) {
+        const data: {level: exceptionLevel, code: number} = type === 'set' ? { level: 'LOG', code: 100001 } : { level: 'WARN', code: 200001 }
+        this.exception(data.level, {
+          code: data.code,
+          message: `${group} group of ${event} already exists!`,
+          detail: { event, group, groups }
+        })
+      }
+    })
+    return this
   }
 
   private _hasCallbackInstance(event: string): boolean {
@@ -109,7 +180,6 @@ export default class HookEvent {
     ctx: any = this
   ): this {
     const { event, group, times } = this._parseIdentity(identity)
-
     const cb = this.getCallbackInstance(event)
     cb[type]({ method, group, times, ctx })
     return this
@@ -123,7 +193,6 @@ export default class HookEvent {
     const { length } = items
     for (let i = 0; i < length; i++) {
       const item = items[i]
-
       try {
         const executed = await this._execCallback(item, ...params)
         if (executed) {
@@ -132,6 +201,13 @@ export default class HookEvent {
       } catch (err) {
         result.status = false
         result.errors.push(err)
+        this.exception('ERROR', {
+          code: 300001,
+          message: 'run callback error',
+          detail: {
+            ...item
+          }
+        })
       }
     }
 
