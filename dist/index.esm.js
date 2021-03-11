@@ -71,14 +71,14 @@ var HookEvent = /*#__PURE__*/function () {
     key: "traceLog",
     value: function traceLog() {
       this.off('HOOK_LOG').on('HOOK_LOG', function (info) {
-        console.error(info);
+        console.log(info);
       });
     }
   }, {
     key: "traceWarn",
     value: function traceWarn() {
       this.off('HOOK_WARN').on('HOOK_WARN', function (info) {
-        console.error(info);
+        console.warn(info);
       });
     }
   }, {

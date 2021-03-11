@@ -74,13 +74,13 @@ export default class HookEvent {
 
   traceLog() {
     this.off('HOOK_LOG').on('HOOK_LOG', (info) => {
-      console.error(info)
+      console.log(info)
     })
   }
 
   traceWarn() {
     this.off('HOOK_WARN').on('HOOK_WARN', (info) => {
-      console.error(info)
+      console.warn(info)
     })
   }
 

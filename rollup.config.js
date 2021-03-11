@@ -1,6 +1,6 @@
 import resolve from '@rollup/plugin-node-resolve'
 import commonjs from '@rollup/plugin-commonjs'
-import strip from '@rollup/plugin-strip'
+// import strip from '@rollup/plugin-strip'
 import babel from '@rollup/plugin-babel'
 import typescript from '@rollup/plugin-typescript'
 
@@ -38,8 +38,7 @@ export default [
         exclude: [/\/node_modules\//],
         extensions,
       }),
-
-      strip(),
+      // strip(),
       terser(),
       filesize(),
     ],
@@ -71,7 +70,6 @@ export default [
       filesize(),
     ],
     external: (id) => {
-      // console.log('id: ', id)
       return /core-js|@babel\/runtime|@hook\/callback/.test(id)
     },
   },
