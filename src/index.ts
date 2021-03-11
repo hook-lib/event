@@ -1,13 +1,15 @@
-import HookCallback from '@hook/callback'
-import type { groups, options, item } from '@hook/callback'
+import HookCallback, { options as callbackOptions } from '@hook/callback'
+import type { groups, item } from '@hook/callback'
 
-type identityObject = {
+export interface identityObject {
   event: string
   group?: string
   times?: number
 }
 
-type identity = identityObject | string
+export interface options extends callbackOptions{}
+
+export type identity = identityObject | string
 
 type hookCallbacks = {
   [key: string]: HookCallback
@@ -15,7 +17,7 @@ type hookCallbacks = {
 
 type method = (...args: any) => any
 
-type emitResult = {
+export type emitResult = {
   total: number
   status: boolean
   errors: Error[]
@@ -40,13 +42,13 @@ export default class HookEvent {
     this.initDefaultGroup = config.initDefaultGroup
   }
 
-  setEventGroups(event: string, groups: groups): HookEvent {
+  setEventGroups(event: string, groups: groups): this {
     const cb = this.getCallbackInstance(event)
     cb.setGroups(groups)
     return this
   }
 
-  public getCallbackInstance(event: string): HookCallback {
+  getCallbackInstance(event: string): HookCallback {
     if (!this.hookCallbacks[event]) {
       this.hookCallbacks[event] = new HookCallback({
         defaultGroup: this.defaultGroup,
@@ -57,11 +59,11 @@ export default class HookEvent {
     return this.hookCallbacks[event]
   }
 
-  on(identity: identity, method: method, ctx: any = this) {
+  on(identity: identity, method: method, ctx: any = this): this {
     return this._bind('push', identity, method, ctx)
   }
 
-  listen(identity: identity, method: method, ctx: any = this) {
+  listen(identity: identity, method: method, ctx: any = this): this {
     return this._bind('unshift', identity, method, ctx)
   }
 
@@ -70,7 +72,7 @@ export default class HookEvent {
     identity: identity,
     method: method,
     ctx: any = this
-  ): HookEvent {
+  ): this {
     const { event, group, times } = this._parseIdentity(identity)
 
     const cb = this.getCallbackInstance(event)
@@ -78,7 +80,7 @@ export default class HookEvent {
     return this
   }
 
-  off(identity: identity): HookEvent {
+  off(identity: identity): this {
     const { event, group } = this._parseIdentity(identity)
 
     const cb = this.getCallbackInstance(event)
